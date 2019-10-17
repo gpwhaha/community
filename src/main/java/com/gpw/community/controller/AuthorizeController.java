@@ -9,6 +9,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+
+import javax.servlet.http.HttpServletRequest;
+
 @Controller
 public class AuthorizeController {
     @Autowired
@@ -16,16 +19,15 @@ public class AuthorizeController {
 
     @Value("${githup.client.id}")
     private String clientId;
-
     @Value("${githup.client.secret}")
     private String clientSecret;
-
     @Value("${githup.redirect.uri}")
     private String clientUri;
 
     @GetMapping("/calback")
     public String calback(@RequestParam(name = "code") String code,
-                          @RequestParam(name = "state") String state){
+                          @RequestParam(name = "state") String state,
+                                   HttpServletRequest request){
         AccessTokenDTO accessTokenDTO = new AccessTokenDTO();
         accessTokenDTO.setCode(code);
         accessTokenDTO.setRedirect_uri(clientUri);
@@ -35,6 +37,13 @@ public class AuthorizeController {
         String accessToken = githupProvider.getAccessToken(accessTokenDTO);
         GithupUser user = githupProvider.getUser(accessToken);
         System.out.println(user.getName());
-        return "index";
+        if(user != null){
+            request.getSession().setAttribute("user",user);
+            return "redirect:/";
+            //登陆成功，写cookie和seeion
+        }else {
+            return "redirect:/";
+            //登录失败，重新登录
+        }
     }
 }
